@@ -1,5 +1,5 @@
 //============================================================================
-//  Arcade: 1943  by Jose Tejada Gomez. Twitter: @topapate 
+//  Arcade: 1943  by Jose Tejada Gomez. Twitter: @topapate
 //
 //  Port to MiSTer
 //  Thanks to Sorgelig for his continuous support
@@ -93,14 +93,14 @@ module emu
     output        SDRAM_nWE
 );
 
-`include "build_id.v" 
+`include "build_id.v"
 localparam CONF_STR = {
-    "A.1943;;", 
+    "A.1943;;",
     "-;",
     "F,rom;",
     "O1,Aspect Ratio,Original,Wide;",
     "O2,Orientation,Vert,Horz;",
-    "O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",  
+    "O35,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%,CRT 75%;",
     "-;",
     "OCD,Difficulty,Normal,Easy,Hard,Very hard;",
     // "O67,Lives,3,1,2,5;",
@@ -149,86 +149,31 @@ assign LED_POWER = 2'b0;
 assign HDMI_ARX = status[1] ? 8'd16 : status[2] ? 8'd4 : 8'd3;
 assign HDMI_ARY = status[1] ? 8'd9  : status[2] ? 8'd3 : 8'd4;
 
+wire ps2_kbd_clk, ps2_kbd_data;
+
 hps_io #(.STRLEN($size(CONF_STR)>>3)) hps_io
 (
-    .clk_sys    ( clk_sys       ),
-    .HPS_BUS    ( HPS_BUS       ),
+    .clk_sys          ( clk_sys        ),
+    .HPS_BUS          ( HPS_BUS        ),
 
-    .conf_str   ( CONF_STR      ),
+    .conf_str         ( CONF_STR       ),
 
-    .buttons    ( buttons       ),
-    .status     ( status        ),
+    .buttons          ( buttons        ),
+    .status           ( status         ),
     .forced_scandoubler(forced_scandoubler),
 
     .ioctl_download(downloading),
-    .ioctl_wr   ( ioctl_wr      ),
-    .ioctl_addr ( ioctl_addr    ),
-    .ioctl_dout ( ioctl_data    ),
+    .ioctl_wr         ( ioctl_wr       ),
+    .ioctl_addr       ( ioctl_addr     ),
+    .ioctl_dout       ( ioctl_data     ),
 
-    .joystick_0 ( joy_0         ),
-    .joystick_1 ( joy_1         ),
-    .ps2_key    ( ps2_key       )
+    .joystick_0       ( joy_0          ),
+    .joystick_1       ( joy_1          ),
+    //.ps2_key        ( ps2_key       )
+    .ps2_kbd_clk_out  ( ps2_kbd_clk    ),
+    .ps2_kbd_data_out ( ps2_kbd_data   )
 );
 
-
-reg btn_one_player = 0;
-reg btn_two_players = 0;
-reg btn_left = 0;
-reg btn_right = 0;
-reg btn_down = 0;
-reg btn_up = 0;
-reg btn_fire1 = 0;
-reg btn_fire2 = 0;
-reg btn_coin  = 0;
-reg btn_pause = 0;
-reg btn_test  = 0;
-
-wire       pressed = ps2_key[9];
-wire [7:0] code    = ps2_key[7:0];
-always @(posedge clk_sys) begin
-    reg old_state;
-    old_state <= ps2_key[10];
-    
-    if(old_state != ps2_key[10]) begin
-        case(code)
-            'h75: btn_up         <= pressed; // up
-            'h72: btn_down       <= pressed; // down
-            'h6B: btn_left       <= pressed; // left
-            'h74: btn_right      <= pressed; // right
-            'h05: btn_one_player <= pressed; // F1
-            'h06: btn_two_players<= pressed; // F2
-            'h04: btn_coin       <= pressed; // F3
-            'h0C: btn_pause      <= pressed; // F4
-            'h03: btn_test       <= pressed; // F5
-            'h14: btn_fire1      <= pressed; // ctrl
-            'h11: btn_fire1      <= pressed; // alt
-            'h29: btn_fire2      <= pressed; // Space
-        endcase
-    end
-end
-
-wire [15:0] joy = joy_0 | joy_1;
-
-wire m_up     = btn_up    | joy[3];
-wire m_down   = btn_down  | joy[2];
-wire m_left   = btn_left  | joy[1];
-wire m_right  = btn_right | joy[0];
-wire m_fire   = btn_fire1 | joy[4];
-wire m_jump   = btn_fire2 | joy[5];
-wire m_pause  = btn_pause | joy[9];
-
-wire m_start1 = btn_one_player  | joy[6];
-wire m_start2 = btn_two_players | joy[7];
-wire m_coin   = btn_coin        | joy[8];
-
-reg pause = 0;
-always @(posedge clk_sys) begin
-    reg old_pause;
-    
-    old_pause <= m_pause;
-    if(~old_pause & m_pause) pause <= ~pause;
-    if(status[0] | buttons[1]) pause <= 0;
-end
 
 ///////////////////////////////////////////////////////////////////
 
@@ -249,11 +194,11 @@ arcade_rotate_fx #(256,224,12,1) arcade_video
     .VBlank(~vblank),
     .HSync(hs),
     .VSync(vs),
-    
+
     .fx(status[5:3]),
     .no_rotate(status[2])
 );
-`else 
+`else
     assign VGA_VS = vs;
     assign VGA_HS = hs;
     assign VGA_R  = r;
@@ -263,62 +208,6 @@ arcade_rotate_fx #(256,224,12,1) arcade_video
     assign VGA_CLK= clk_sys;
 `endif
 
-///////////////////////////////////////////////////////////////////
-
-wire reset = RESET | status[0] | buttons[1];
-// reg [1:0] rstsr;
-// wire reset = rstsr[1];
-// 
-// always @(negedge clk_sys) begin
-//     if( RESET || status[0] || buttons[1] || !pll_locked ) rstsr <= 2'b11;
-//     else rstsr <= { rstsr[0], 1'b0 };
-// end
-
-
-
-wire         prog_we;
-wire [21:0]  prog_addr;
-wire [ 7:0]  prog_data;
-wire [ 1:0]  prog_mask;
-
-// SDRAM
-wire         loop_rst;
-wire         sdram_req;
-wire [31:0]  data_read;
-wire [21:0]  sdram_addr;
-wire         data_rdy;
-wire         sdram_ack;
-wire         refresh_en;
-
-
-jtgng_sdram u_sdram(
-    .rst        ( RESET         ),
-    .clk        ( clk_sys       ), // 48 MHz
-    .loop_rst   ( loop_rst      ),
-    .read_req   ( sdram_req     ),
-    .data_read  ( data_read     ),
-    .data_rdy   ( data_rdy      ),
-    .refresh_en ( refresh_en    ),
-    // ROM-load interface
-    .downloading( downloading   ),
-    .prog_we    ( prog_we       ),
-    .prog_addr  ( prog_addr     ),
-    .prog_data  ( prog_data     ),
-    .prog_mask  ( prog_mask     ),
-    .sdram_addr ( sdram_addr    ),
-    .sdram_ack  ( sdram_ack     ),
-    // SDRAM interface
-    .SDRAM_DQ   ( SDRAM_DQ      ),
-    .SDRAM_A    ( SDRAM_A       ),
-    .SDRAM_DQML ( SDRAM_DQML    ),
-    .SDRAM_DQMH ( SDRAM_DQMH    ),
-    .SDRAM_nWE  ( SDRAM_nWE     ),
-    .SDRAM_nCAS ( SDRAM_nCAS    ),
-    .SDRAM_nRAS ( SDRAM_nRAS    ),
-    .SDRAM_nCS  ( SDRAM_nCS     ),
-    .SDRAM_BA   ( SDRAM_BA      ),
-    .SDRAM_CKE  ( SDRAM_CKE     ) 
-);
 
 wire dip_upright = 1'b1;
 wire dip_credits2p = 1'b1;
@@ -337,9 +226,85 @@ always @(*)
         2'b11: dip_level = 4'b0000; // very hard
     endcase // status[3:2]
 
-jt1943_game #(.CLK_SPEED(48)) game
+///////////////////////////////////////////////////////////////////
+
+wire reset = RESET | status[0] | buttons[1];
+
+wire         prog_we;
+wire [21:0]  prog_addr;
+wire [ 7:0]  prog_data;
+wire [ 1:0]  prog_mask;
+
+// SDRAM
+wire         loop_rst;
+wire         sdram_req;
+wire [31:0]  data_read;
+wire [21:0]  sdram_addr;
+wire         data_rdy;
+wire         sdram_ack;
+wire         refresh_en;
+
+wire [9:0]   game_joystick1, game_joystick2;
+wire [1:0]   game_coin, game_start;
+wire         game_rst;
+wire [3:0]   gfx_en;
+
+jtgng_board u_board(
+    .rst            ( /*reset */         ),    // use as synchrnous reset
+    .rst_n          (                ),    // use as asynchronous reset
+    .game_rst       ( game_rst       ),
+    // reset forcing signals:
+    .dip_flip       ( 1'b0           ), // A change in dip_flip implies a reset
+    .rst_req        ( RESET | status[0] | buttons[1] ),
+
+    .clk_sys        ( clk_sys        ),
+    .clk_rom        ( clk_sys        ),
+
+    // SDRAM controller - game interface
+    .loop_rst       ( loop_rst       ),
+    .sdram_req      ( sdram_req      ),
+    .data_read      ( data_read      ),
+    .data_rdy       ( data_rdy       ),
+    .refresh_en     ( refresh_en     ),
+    .sdram_addr     ( sdram_addr     ),
+    .sdram_ack      ( sdram_ack      ),
+    // ROM-load interface
+    .downloading    ( downloading    ),
+    .prog_we        ( prog_we        ),
+    .prog_addr      ( prog_addr      ),
+    .prog_data      ( prog_data      ),
+    .prog_mask      ( prog_mask      ),
+    // SDRAM interface
+    .SDRAM_DQ       ( SDRAM_DQ       ),
+    .SDRAM_A        ( SDRAM_A        ),
+    .SDRAM_DQML     ( SDRAM_DQML     ),
+    .SDRAM_DQMH     ( SDRAM_DQMH     ),
+    .SDRAM_nWE      ( SDRAM_nWE      ),
+    .SDRAM_nCAS     ( SDRAM_nCAS     ),
+    .SDRAM_nRAS     ( SDRAM_nRAS     ),
+    .SDRAM_nCS      ( SDRAM_nCS      ),
+    .SDRAM_BA       ( SDRAM_BA       ),
+    .SDRAM_CKE      ( SDRAM_CKE      ),
+    // keyboard
+    .ps2_kbd_clk    ( ps2_kbd_clk    ),
+    .ps2_kbd_data   ( ps2_kbd_data   ),
+    // joystick
+    .board_joystick1( joy_0[9:0]     ),
+    .board_joystick2( joy_1[9:0]     ),
+    // joystick
+    .game_joystick1 ( game_joystick1 ),
+    .game_joystick2 ( game_joystick2 ),
+    .game_coin      ( game_coin      ),
+    .game_start     ( game_start     ),
+    .game_pause     ( game_pause     ),
+    .game_service   (                ), // unused
+    // GFX enable
+    .gfx_en         ( gfx_en         )
+);
+
+jt1943_game #(.CLK_SPEED(48)) u_game
 (
-    .rst           ( reset           ),
+    .rst           ( game_rst        ),
 
     .clk_rom       ( clk_sys         ),
     .clk           ( clk_sys         ),
@@ -356,10 +321,10 @@ jt1943_game #(.CLK_SPEED(48)) game
     .HS            ( hs              ),
     .VS            ( vs              ),
 
-    .start_button  ( ~{m_start2,m_start1}),
-    .coin_input    ( ~{1'b0,m_coin}      ),
-    .joystick1     ( ~{1'b0, m_jump,m_fire,m_up,m_down,m_left,m_right}),
-    .joystick2     ( ~{1'b0, m_jump,m_fire,m_up,m_down,m_left,m_right}),
+    .start_button  ( game_start      ),
+    .coin_input    ( game_coin       ),
+    .joystick1     ( game_joystick1[6:0] ),
+    .joystick2     ( game_joystick2[6:0] ),
 
     // Sound control
     .enable_fm    ( 1'b1             ),
