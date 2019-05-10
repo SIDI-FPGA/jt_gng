@@ -184,7 +184,7 @@ wire [3:0] r,g,b;
 `ifndef SIMULATION
 arcade_rotate_fx #(256,224,12,1) arcade_video
 (
-    .*,
+    .*, // VGA_ and HDMI_ pins
 
     .clk_video(clk_sys),
     .ce_pix(cen6),
@@ -228,7 +228,7 @@ always @(*)
 
 ///////////////////////////////////////////////////////////////////
 
-wire reset = RESET | status[0] | buttons[1];
+wire rst_req = RESET | status[0] | buttons[1];
 
 wire         prog_we;
 wire [21:0]  prog_addr;
@@ -250,12 +250,12 @@ wire         game_rst;
 wire [3:0]   gfx_en;
 
 jtgng_board u_board(
-    .rst            ( /*reset */         ),    // use as synchrnous reset
+    .rst            (                ),    // use as synchrnous reset
     .rst_n          (                ),    // use as asynchronous reset
     .game_rst       ( game_rst       ),
     // reset forcing signals:
     .dip_flip       ( 1'b0           ), // A change in dip_flip implies a reset
-    .rst_req        ( RESET | status[0] | buttons[1] ),
+    .rst_req        ( rst_req        ),
 
     .clk_sys        ( clk_sys        ),
     .clk_rom        ( clk_sys        ),
@@ -304,7 +304,7 @@ jtgng_board u_board(
 
 jt1943_game #(.CLK_SPEED(48)) u_game
 (
-    .rst           ( game_rst        ),
+    .rst           ( rst_req         ),
 
     .clk_rom       ( clk_sys         ),
     .clk           ( clk_sys         ),
@@ -351,7 +351,7 @@ jt1943_game #(.CLK_SPEED(48)) u_game
     .cheat_invincible( status[10]    ),
 
     .dip_test     ( ~btn_test        ),
-    .dip_pause    ( ~pause           ),
+    .dip_pause    ( ~game_pause      ),
     .dip_upright  ( dip_upright      ),
     .dip_credits2p( dip_credits2p    ),
     .dip_level    ( dip_level        ),
