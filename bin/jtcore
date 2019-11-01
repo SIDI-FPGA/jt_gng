@@ -16,7 +16,8 @@ JT_GNG compilation tool. (c) Jose Tejada 2019, @topapate
                     MISTER_VIDEO_MIXER  uses the Mr video modules
                     JTFRAME_SCAN2X      uses simple scan doubler from JTFRAME
     -git        adds the release file to git
-    -mister     compiles MiSTer version. Default is MiST.
+    -mister     compiles MiSTer version.
+    -sidi       compiles SiDi version.
     -prog       programs the FPGA
     -prog-only  skips compilations and directly programs the FPGA
     -zip | -z   Create zip file
@@ -73,6 +74,13 @@ while [ $# -gt 0 ]; do
             SKIP_COMPILE=TRUE;;
         -mister | -mr)
             MIST=mister
+            if ! (which quartus_sh|grep 17 -q); then
+                PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
+                PATH=$PATH:$HOME/intelFPGA_lite/17.1/quartus/bin
+                export PATH
+            fi;;
+        -sidi | -mr)
+            MIST=sidi
             if ! (which quartus_sh|grep 17 -q); then
                 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
                 PATH=$PATH:$HOME/intelFPGA_lite/17.1/quartus/bin
