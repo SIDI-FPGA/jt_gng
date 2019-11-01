@@ -10,6 +10,7 @@
 *.log
 *.png
 *~
+db/
 sim
 build_id.v
 */mist/*

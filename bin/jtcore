@@ -79,11 +79,11 @@ while [ $# -gt 0 ]; do
                 PATH=$PATH:$HOME/intelFPGA_lite/17.1/quartus/bin
                 export PATH
             fi;;
-        -sidi | -mr)
+        -sidi | -sd)
             MIST=sidi
             if ! (which quartus_sh|grep 17 -q); then
                 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
-                PATH=$PATH:$HOME/intelFPGA_lite/17.1/quartus/bin
+                PATH=$PATH:$HOME/altera/13.1/quartus/bin/
                 export PATH
             fi;;
         -mist)
