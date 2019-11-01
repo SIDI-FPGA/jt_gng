@@ -80,7 +80,8 @@ while [ $# -gt 0 ]; do
                 export PATH
             fi;;
         -sidi | -sd)
-            MIST=sidi
+            MIST=mist
+            SIDI=sidi
             if ! (which quartus_sh|grep 17 -q); then
                 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:.
                 PATH=$PATH:$HOME/altera/13.1/quartus/bin/
@@ -117,9 +118,18 @@ function copy_templates {
     datestr=$(date "+%H:%M:%S %B %e, %Y")
     sedstr='s/${CORENAME}/'${PRJ}'/g;s/${DATE}/'${datestr}'/g'
     sed "$sedstr" $JTGNG/modules/templates/$MIST.qpf > $JTGNG/$PRJ/$MIST/jt${PRJ}.qpf
-    sed "$sedstr" $JTGNG/modules/templates/$MIST.qsf > $JTGNG/$PRJ/$MIST/jt${PRJ}.qsf
-    # MiST's tcl is always appended
+    case $SIDI in
+     "sidi")      
+           sed "$sedstr" $JTGNG/modules/templates/sidi.qsf > $JTGNG/$PRJ/$MIST/jt${PRJ}.qsf
+           ;;
+     "default")
+           sed "$sedstr" $JTGNG/modules/templates/$MIST.qsf > $JTGNG/$PRJ/$MIST/jt${PRJ}.qsf
+           ;;
+     esac
+     
     cat $JTGNG/$PRJ/mist/jt${PRJ}.tcl >> $JTGNG/$PRJ/$MIST/jt${PRJ}.qsf
+    # MiST's tcl is always appended
+    
     # MiSTer's tcl is added if it exists
     if [ $MIST = mister ]; then
         if [ -e $JTGNG/$PRJ/mister/jt${PRJ}.tcl ]; then

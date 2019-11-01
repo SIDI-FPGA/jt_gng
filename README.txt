@@ -70,6 +70,10 @@ jtcore gng -mr
 
 will compile it for MiSTer.
 
+jtcore gng -sidi (or -sd)
+
+will compile it for SiDi.
+
 once compilation is triggered, Quartus qpf and qsf files are created. This files are not
 part of the repository as they are considered output files, not input.
 
